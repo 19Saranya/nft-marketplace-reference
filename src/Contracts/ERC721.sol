@@ -16,8 +16,42 @@ contract ERC721{
     e.create an event that emits a transfer log - contract address, where it is being minted to, the id (logs of info that tracks)
 
     */ 
-    //mapping in solidity creats a  hash table of key pair values
 
+    /*
+    Emergency Stop pattern
+      ability to pause your contract.
+      guard critical functionality against the abuse of undiscovered bugs.
+      prepare your contract for potential failures.
+    */
+
+    bool isStopped = false;
+    address public owner = msg.sender;
+
+    modifier stoppedInEmergency {
+        require(!isStopped);
+        _;
+    }
+
+    modifier onlyWhenStopped {
+        require(isStopped);
+        _;
+    }
+
+    modifier onlyAuthorized {
+        // Check for authorization of msg.sender here
+        require(owner == msg.sender,"You are not the owner/authorised personnel.");
+        _;
+    }
+
+    function stopContract() public onlyAuthorized {
+        isStopped = true;
+    }
+
+    function resumeContract() public onlyAuthorized {
+        isStopped = false;
+    }
+
+    //mapping in solidity creats a  hash table of key pair values
     //mapping from token id to the owner
      mapping(uint256 => address) private _tokenOwner;
      // mapping from owner to number of owned tokens
@@ -41,9 +75,9 @@ contract ERC721{
     // @param _tokenId The identifier for an NFT
     // @return The address of the owner of the NFT
       function ownerOf(uint256 _tokenId)public view returns(address){
-         address owner = _tokenOwner[_tokenId];
-         require(owner != address(0),'owner query for non-existent');
-        return owner;
+         address owner_0 = _tokenOwner[_tokenId];
+         require(owner_0 != address(0),'owner query for non-existent');
+        return owner_0;
       }
 
 /*
@@ -60,12 +94,12 @@ Create two requirements -
     function _exists(uint256 tokenId) internal view returns(bool){
         // setting the address of nft owner to check the mapping
         //of the address from tokenOwner at the tokenId
-        address owner = _tokenOwner[tokenId];
+        address owner_0 = _tokenOwner[tokenId];
         // return truthiness the address is not zero
-        return owner  != address(0);   
+        return owner_0  != address(0);   
     }   
 
-    function _mint(address to, uint256 tokenId) internal virtual{
+    function _mint(address to, uint256 tokenId) internal virtual stoppedInEmergency{
         //require that the address isn't zero
         require(to != address(0), 'ERC721: minting to the zero address');
         //requires that the token does not already exist
@@ -93,7 +127,9 @@ Create two requirements -
       _tokenOwner[_tokenId] = _to;
        emit Transfer(_from, _to,  _tokenId);
      }
-      function transferFrom(address _from, address _to, uint256 _tokenId) public{
+
+      //function transferFrom(address _from, address _to, uint256 _tokenId) public {
+      function transferFrom(address _from, address _to, uint256 _tokenId) public onlyWhenStopped{
         _transferFrom( _from, _to, _tokenId);
       
       }
